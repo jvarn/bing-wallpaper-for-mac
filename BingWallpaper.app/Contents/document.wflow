@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AMApplicationBuild</key>
+	<string>490</string>
+	<key>AMApplicationVersion</key>
+	<string>2.10</string>
+	<key>AMDocumentVersion</key>
+	<string>2</string>
+	<key>actions</key>
+	<array>
+		<dict>
+			<key>action</key>
+			<dict>
+				<key>AMAccepts</key>
+				<dict>
+					<key>Container</key>
+					<string>List</string>
+					<key>Optional</key>
+					<true/>
+					<key>Types</key>
+					<array>
+						<string>com.apple.cocoa.string</string>
+					</array>
+				</dict>
+				<key>AMActionVersion</key>
+				<string>2.0.3</string>
+				<key>AMApplication</key>
+				<array>
+					<string>Automator</string>
+				</array>
+				<key>AMParameterProperties</key>
+				<dict>
+					<key>COMMAND_STRING</key>
+					<dict/>
+					<key>CheckedForUserDefaultShell</key>
+					<dict/>
+					<key>inputMethod</key>
+					<dict/>
+					<key>shell</key>
+					<dict/>
+					<key>source</key>
+					<dict/>
+				</dict>
+				<key>AMProvides</key>
+				<dict>
+					<key>Container</key>
+					<string>List</string>
+					<key>Types</key>
+					<array>
+						<string>com.apple.cocoa.string</string>
+					</array>
+				</dict>
+				<key>ActionBundlePath</key>
+				<string>/System/Library/Automator/Run Shell Script.action</string>
+				<key>ActionName</key>
+				<string>Run Shell Script</string>
+				<key>ActionParameters</key>
+				<dict>
+					<key>COMMAND_STRING</key>
+					<string>import os, datetime, json
+
+#For python3
+try:
+    from urllib.request import urlopen
+#For python2
+except:
+    from urllib2 import urlopen
+
+#Ping function to validate internet connectivity
+def ping():
+    hostname = "www.bing.com"
+    response = os.system("ping -c 1 " + hostname)
+    # and then check the response...
+    if response == 0:
+        return True #If exit code is 0, ping completed successfully
+
+    else:
+        return False #Else no internet connection
+
+
+#Get home folder
+homeFolder = os.path.expanduser("~")
+pictureLocation = homeFolder + "/Pictures/bing-wallpaper/"
+appLocation = homeFolder + "/Applications/Bing\ Wallpaper/BingWallpaper.app"
+internetConnected = False
+
+
+#Ping and check status of internet connection
+internetConnected = ping()
+
+#Old block to check internet connection - does not always provide reliable result
+"""
+#Check to see if there is an active internet connection
+try:
+    urlopen("http://www.bing.com",timeout=10)
+    internetConnected = True
+except:
+    internetConnected = False
+"""
+
+# --------
+
+
+#Try with python3
+try:
+    from urllib.request import urlopen, urlretrieve
+    from urllib.request import urlretrieve
+
+#Else try python2
+except:
+    from urllib2 import urlopen
+    from urllib import urlretrieve
+
+from os import path
+
+
+#User home folder
+#homeFolder = path.expanduser("~")
+
+#Save pictures to a folder
+pictureLocation = homeFolder + "/Pictures/bing-wallpaper/"
+
+
+def get_wallpaper():
+    ########Defining variables#######
+
+    #URL in json format for latest wallpaper
+    url = "http://www.bing.com/HPImageArchive.aspx?format=js&amp;idx=0&amp;n=1&amp;mkt=en-US"
+    
+    getHighRes = 1 #Manually change the resolution in the url to 1920x1200. Change to 0 if url breaks.
+
+    #Get json response from bing.com
+    response = urlopen(url)
+
+    #Trying python 3
+    try:
+        output = response.readall().decode('utf-8')
+
+    #Else trying python2
+    except:
+           output = response.read()
+           
+    #Get json output
+    data = json.loads(output)
+
+    #Form image url from json
+    output_url = "http://www.bing.com/" + data["images"][0]["url"]
+
+    #Form 1920x1200 image from above url
+    output_url_highres = output_url.replace("1080", "1200")
+
+
+    #If higher resolution is preferred(default)
+    if getHighRes == 1:
+        
+        #Use try block to catch any failure in getting the high res image
+        try:
+            process_url(output_url_highres)
+
+        except:
+            process_url(output_url)
+
+    else:
+        process_url(output_url)
+
+
+def process_url(image_url):
+    if not check_url(image_url)  == 1:
+        #Get the filename of the new file from the url
+        filename = pictureLocation + image_url.split('/')[-1].split("&amp;")[0].split("=")[1]
+	# th?id=OHR.AlbertaBubbles_EN-US3535339115_1920x1200.jpg&amp;rf=LaDigue_1920x1200.jpg&amp;pid=hp
+	# filename = pictureLocation + 'th.jpg'
+
+        #Retrieve the image from the web and save it to desired location
+        req = urlretrieve(image_url, filename)
+
+        #Save the file path + filename to the output variable
+        bingImage = path.abspath(filename)
+        print(bingImage)
+    else:
+        raise Exception('bad url')
+
+def check_url(image_url):
+    conn = urlopen(image_url)
+    if not conn.getcode() == 200:
+        return 1
+
+# -------
+
+#Flag to see if any jpg file was found in the bing-wallpaper folder
+fileExists=0
+
+#Check to see if the bing-wallpaper folder exists in the Pictures directory
+if not os.path.exists(pictureLocation):
+    #If it does not exist, create the directory
+    os.makedirs(pictureLocation)
+#Find the jpg file in the bing-wallpaper folder
+for f in os.listdir(pictureLocation):
+    #if there is a file...
+    if os.path.isfile(pictureLocation + f):
+        #Check to see if the file ends with jpg. This removes the .DS files
+        if f.endswith(".jpg"):
+            #Flag that a jpg file was found
+            fileExists=1
+            file = pictureLocation + f
+            #Get change date of the file
+            #Returns number of seconds since the epoch
+            fileChange = os.path.getctime(file)
+
+            #Convert change time into string
+            changeTimeStr = (datetime.datetime.fromtimestamp(fileChange).strftime('%Y-%m-%d %H:%M:%S.%f'))
+
+            #Convert the
+            changeTime = datetime.datetime.strptime(changeTimeStr, "%Y-%m-%d %H:%M:%S.%f")
+
+            #Get the time now
+            today = datetime.datetime.today()
+
+            #Get the difference between now and the date the file was changed
+            c = today.date() - changeTime.date()
+
+            #If the difference is 1 day, then run the app to download a new image, else pass.
+            if c.days &gt; 0 and internetConnected==True:
+                get_wallpaper()
+
+#If there was no jpg file in the folder, run the app to get a new wallpaper
+if internetConnected==True and fileExists==0:
+    get_wallpaper()</string>
+					<key>CheckedForUserDefaultShell</key>
+					<true/>
+					<key>inputMethod</key>
+					<integer>0</integer>
+					<key>shell</key>
+					<string>/usr/bin/python</string>
+					<key>source</key>
+					<string></string>
+				</dict>
+				<key>BundleIdentifier</key>
+				<string>com.apple.RunShellScript</string>
+				<key>CFBundleVersion</key>
+				<string>2.0.3</string>
+				<key>CanShowSelectedItemsWhenRun</key>
+				<false/>
+				<key>CanShowWhenRun</key>
+				<true/>
+				<key>Category</key>
+				<array>
+					<string>AMCategoryUtilities</string>
+				</array>
+				<key>Class Name</key>
+				<string>RunShellScriptAction</string>
+				<key>InputUUID</key>
+				<string>58B63418-CA12-40BD-BDE6-E398EAA78CE2</string>
+				<key>Keywords</key>
+				<array>
+					<string>Shell</string>
+					<string>Script</string>
+					<string>Command</string>
+					<string>Run</string>
+					<string>Unix</string>
+				</array>
+				<key>OutputUUID</key>
+				<string>E8AD152B-33BD-48A4-9DA1-974180169A7F</string>
+				<key>UUID</key>
+				<string>C3526F6A-6CF4-43F0-967E-5A8CE0163A0F</string>
+				<key>UnlocalizedApplications</key>
+				<array>
+					<string>Automator</string>
+				</array>
+				<key>arguments</key>
+				<dict>
+					<key>0</key>
+					<dict>
+						<key>default value</key>
+						<integer>0</integer>
+						<key>name</key>
+						<string>inputMethod</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>0</string>
+					</dict>
+					<key>1</key>
+					<dict>
+						<key>default value</key>
+						<false/>
+						<key>name</key>
+						<string>CheckedForUserDefaultShell</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>1</string>
+					</dict>
+					<key>2</key>
+					<dict>
+						<key>default value</key>
+						<string></string>
+						<key>name</key>
+						<string>source</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>2</string>
+					</dict>
+					<key>3</key>
+					<dict>
+						<key>default value</key>
+						<string></string>
+						<key>name</key>
+						<string>COMMAND_STRING</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>3</string>
+					</dict>
+					<key>4</key>
+					<dict>
+						<key>default value</key>
+						<string>/bin/sh</string>
+						<key>name</key>
+						<string>shell</string>
+						<key>required</key>
+						<string>0</string>
+						<key>type</key>
+						<string>0</string>
+						<key>uuid</key>
+						<string>4</string>
+					</dict>
+				</dict>
+				<key>isViewVisible</key>
+				<true/>
+				<key>location</key>
+				<string>248.000000:252.000000</string>
+				<key>nibPath</key>
+				<string>/System/Library/Automator/Run Shell Script.action/Contents/Resources/Base.lproj/main.nib</string>
+			</dict>
+			<key>isViewVisible</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>action</key>
+			<dict>
+				<key>AMAccepts</key>
+				<dict>
+					<key>Container</key>
+					<string>List</string>
+					<key>Optional</key>
+					<false/>
+					<key>Types</key>
+					<array>
+						<string>com.apple.cocoa.path</string>
+					</array>
+				</dict>
+				<key>AMActionVersion</key>
+				<string>1.0.2</string>
+				<key>AMApplication</key>
+				<array>
+					<string>Finder</string>
+				</array>
+				<key>AMParameterProperties</key>
+				<dict/>
+				<key>AMProvides</key>
+				<dict>
+					<key>Container</key>
+					<string>List</string>
+					<key>Types</key>
+					<array>
+						<string>com.apple.cocoa.path</string>
+					</array>
+				</dict>
+				<key>ActionBundlePath</key>
+				<string>/System/Library/Automator/Set Desktop Picture.action</string>
+				<key>ActionName</key>
+				<string>Set the Desktop Picture</string>
+				<key>ActionParameters</key>
+				<dict/>
+				<key>BundleIdentifier</key>
+				<string>com.apple.Automator.SetDesktopPicture</string>
+				<key>CFBundleVersion</key>
+				<string>1.0.2</string>
+				<key>CanShowSelectedItemsWhenRun</key>
+				<true/>
+				<key>CanShowWhenRun</key>
+				<true/>
+				<key>Category</key>
+				<array>
+					<string>AMCategoryFilesAndFolders</string>
+				</array>
+				<key>Class Name</key>
+				<string>Set_Desktop_Picture</string>
+				<key>InputUUID</key>
+				<string>41C47116-29E3-48F2-8C98-C535530236EE</string>
+				<key>Keywords</key>
+				<array>
+					<string>Set</string>
+					<string>Image</string>
+					<string>Photo</string>
+					<string>Display</string>
+				</array>
+				<key>OutputUUID</key>
+				<string>FD870343-7CDA-48E9-8A91-EA23C0C9F6D2</string>
+				<key>UUID</key>
+				<string>946516ED-E49F-4907-B0AE-99A918F54CED</string>
+				<key>UnlocalizedApplications</key>
+				<array>
+					<string>Finder</string>
+				</array>
+				<key>arguments</key>
+				<dict/>
+			</dict>
+		</dict>
+	</array>
+	<key>connectors</key>
+	<dict>
+		<key>F76A7C5F-E119-4031-9AA3-20453E6118A9</key>
+		<dict>
+			<key>from</key>
+			<string>C3526F6A-6CF4-43F0-967E-5A8CE0163A0F - C3526F6A-6CF4-43F0-967E-5A8CE0163A0F</string>
+			<key>to</key>
+			<string>946516ED-E49F-4907-B0AE-99A918F54CED - 946516ED-E49F-4907-B0AE-99A918F54CED</string>
+		</dict>
+	</dict>
+	<key>workflowMetaData</key>
+	<dict>
+		<key>workflowTypeIdentifier</key>
+		<string>com.apple.Automator.application</string>
+	</dict>
+</dict>
+</plist>
