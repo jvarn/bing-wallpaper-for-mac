@@ -1,45 +1,23 @@
 # bing-wallpaper-for-mac
 Bing wallpaper for mac
 
-This program is written in python specifically for OSX and tested on Yosemite 10.10.2 running python 2.7.9 and 3.4.3
+This program is written in python specifically for MacOS and tested on Catalina 10.15.1 running python 2.7.16 and is based upon bing-wallpaper-for-mac by an original work by Bobin Joseph (see LICENSE.md).
 
-###Notes
-
--  The app calls the python scripts on execution.
--  In order to save space, the script assumes that *only 1 image* is kept in the ~/Pictures/bing-wallpaper folder.
--  Place all the files into a single folder. Here it is in the Applications folder within the user's home directory - `~/Applications/Bing Wallpaper`
--  Open the plist file with your favorite editor and change the username to your username
-
-![Image](http://i.imgur.com/Zr9qkQs.jpg)
-
-###The App
-- The application is split in the following ways:
-	- The checker app checks to ensure there is internet connectivity, then checks to see if an image file already exists in the ~/Pictures/bing-wallpaper folder.
-		- If there are files, it will check to see if the file was created today.
-			- If the file was created today, stop and don't do anything
-			- Else, run the app to download the wallpaper.
-		- If there are no files, run the app to download the wallpaper
-	- The wallpaper downloader app ensures that you only have the latest wallpaper in your folder. It makes sure to delete all files from that folder before downloading the new wallpaper.
-
-###Plist File
-- Copy the plist file to `~/Library/LaunchAgents`
-```
-cp bing.wallpaper.mac.plist ~/Library/LaunchAgents
-```
-- Edit the plist file to reflect your username
-- Save and close
-- Run the following terminal command
-```
-launchctl load ~/Library/LaunchAgents/bing.wallpaper.mac.plist
-```
+###Installation
+-  To install, copy the app into your /Applications folder or into your ~/Applications folder according to preference.
+-  To refresh the wallpaper automatically, you can run one of the scripts provided in the Scripts folder that will install a plist file into your LaunchAgents folder.
 
 ###Uninstall
-- To uninstall run this command
-```
-launchctl unload ~/Library/LaunchAgents/bing.wallpaper.mac.plist
-```
-- Delete the `~/Applications/Bing Wallpaper` folder and its contents
-- Delete the `~/Pictures/bing-wallpaper` folder and its contents
+- First run the provided uninstall script to stop auto refreshing the wallpaper
+- Then delete the app from your Applications folder
+- Optionally delete the `~/Pictures/bing-wallpaper` folder and its contents
 
-###Thanks
-Feel free to share your comments and thoughts. I am new to github.
+
+###Notes
+-  The app is written in python and is embedded in an Automator application.
+	- The checker script checks to ensure there is internet connectivity, then checks to see if an image file already exists in the ~/Pictures/bing-wallpaper folder.
+		- If there are files, it will check to see if the file was created today.
+			- If the file was created today, it stops and doesn't do anything
+			- Otherwise, it runs the script to download the wallpaper.
+		- If there are no files, it runs the script to download the wallpaper
+-  The original script saved space by only keeping 1 image in the ~/Pictures/bing-wallpaper folder. I preferred to keep previous images and remove them manually so I modified the default behavior accordingly.
